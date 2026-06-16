@@ -65,6 +65,8 @@ def build_layout(
     bottom_trim_height: int = 34,
     dummy_fraction: float = 0.16,
     trim_height: int | None = None,
+    odd_panel_width: int | None = None,
+    even_panel_width: int | None = None,
 ) -> list[Panel]:
     """Build a 3-row facade with optional windows and dummy side panels in the middle row.
 
@@ -81,15 +83,23 @@ def build_layout(
         raise ValueError("panel_height must be at least 1")
     if top_trim_height < 0 or bottom_trim_height < 0:
         raise ValueError("trim heights must be non-negative")
+    if (odd_panel_width is None) != (even_panel_width is None):
+        raise ValueError("odd_panel_width and even_panel_width must be provided together")
+    if odd_panel_width is not None and even_panel_width is not None:
+        if odd_panel_width < 1 or even_panel_width < 1:
+            raise ValueError("panel widths must be at least 1")
+        bay_widths = [odd_panel_width if col % 2 == 0 else even_panel_width for col in range(columns)]
+        width = sum(bay_widths)
+    else:
+        bay_widths = [width / columns] * columns
     window_set = set(window_columns)
-    bay_w = width / columns
     panels: list[Panel] = []
 
     panels.append(Panel("T_TOP", -1, -1, "trim", Rect(0, 0, width, top_trim_height)))
     for row in range(3):
         y = top_trim_height + row * panel_height
-        for col in range(columns):
-            x = col * bay_w
+        x = 0.0
+        for col, bay_w in enumerate(bay_widths):
             if row == 1 and col in window_set:
                 dummy_w = bay_w * dummy_fraction
                 window_w = bay_w - 2 * dummy_w
@@ -98,6 +108,7 @@ def build_layout(
                 panels.append(Panel(f"D_{col + 1:02d}_R", row, col, "dummy", Rect(x + dummy_w + window_w, y, dummy_w, panel_height), side="R"))
             else:
                 panels.append(Panel(f"P_{row}_{col + 1:02d}", row, col, "full", Rect(x, y, bay_w, panel_height)))
+            x += bay_w
     panels.append(Panel("T_BOTTOM", 3, -1, "trim", Rect(0, top_trim_height + 3 * panel_height, width, bottom_trim_height)))
     return panels
 
@@ -108,10 +119,23 @@ def canvas_size(
     top_trim_height: int = 34,
     bottom_trim_height: int = 34,
     trim_height: int | None = None,
+    columns: int | None = None,
+    odd_panel_width: int | None = None,
+    even_panel_width: int | None = None,
 ) -> tuple[int, int]:
     if trim_height is not None:
         top_trim_height = trim_height
         bottom_trim_height = trim_height
+    if (odd_panel_width is None) != (even_panel_width is None):
+        raise ValueError("odd_panel_width and even_panel_width must be provided together")
+    if odd_panel_width is not None and even_panel_width is not None:
+        if columns is None:
+            raise ValueError("columns must be provided when custom panel widths are used")
+        if odd_panel_width < 1 or even_panel_width < 1:
+            raise ValueError("panel widths must be at least 1")
+        odd_columns = (columns + 1) // 2
+        even_columns = columns // 2
+        width = odd_columns * odd_panel_width + even_columns * even_panel_width
     return width, top_trim_height + bottom_trim_height + panel_height * 3
 
 

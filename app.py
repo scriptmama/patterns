@@ -21,7 +21,9 @@ with st.sidebar:
 
     st.header("Facade layout")
     columns = st.slider("Number of façade columns", 3, 30, 12)
-    panel_row_height = st.slider("Panel row height", 160, 420, 260, 10)
+    panel_row_height = st.slider("Panel row height", 50, 420, 260, 10)
+    odd_panel_width = st.slider("Odd column panel width", 50, 200, 100, 5)
+    even_panel_width = st.slider("Even column panel width", 50, 200, 100, 5)
     top_trim_height = st.slider("Top trim height", 0, 120, 34, 2)
     bottom_trim_height = st.slider("Bottom trim height", 0, 120, 34, 2)
     window_text = st.text_input("Window column positions (1-based, comma-separated)", "4,5,8,9")
@@ -54,6 +56,9 @@ size = canvas_size(
     panel_height=panel_row_height,
     top_trim_height=top_trim_height,
     bottom_trim_height=bottom_trim_height,
+    columns=columns,
+    odd_panel_width=odd_panel_width,
+    even_panel_width=even_panel_width,
 )
 layout = build_layout(
     columns=columns,
@@ -62,6 +67,8 @@ layout = build_layout(
     panel_height=panel_row_height,
     top_trim_height=top_trim_height,
     bottom_trim_height=bottom_trim_height,
+    odd_panel_width=odd_panel_width,
+    even_panel_width=even_panel_width,
 )
 panels = generate_pattern(
     layout,
