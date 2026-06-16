@@ -21,6 +21,9 @@ with st.sidebar:
 
     st.header("Facade layout")
     columns = st.slider("Number of façade columns", 3, 30, 12)
+    panel_row_height = st.slider("Panel row height", 160, 420, 260, 10)
+    top_trim_height = st.slider("Top trim height", 0, 120, 34, 2)
+    bottom_trim_height = st.slider("Bottom trim height", 0, 120, 34, 2)
     window_text = st.text_input("Window column positions (1-based, comma-separated)", "4,5,8,9")
 
     st.header("Color and pattern controls")
@@ -47,8 +50,19 @@ except ValueError as exc:
     st.stop()
 
 reference = Image.open(upload)
-size = canvas_size()
-layout = build_layout(columns=columns, window_columns=window_columns, width=size[0])
+size = canvas_size(
+    panel_height=panel_row_height,
+    top_trim_height=top_trim_height,
+    bottom_trim_height=bottom_trim_height,
+)
+layout = build_layout(
+    columns=columns,
+    window_columns=window_columns,
+    width=size[0],
+    panel_height=panel_row_height,
+    top_trim_height=top_trim_height,
+    bottom_trim_height=bottom_trim_height,
+)
 panels = generate_pattern(
     layout,
     reference,

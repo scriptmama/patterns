@@ -17,7 +17,7 @@ This is **not** an AI image-generation tool. It is a rule-based pattern engine f
 - Choose the diagonal direction that best approximates the image region.
 - Keep windows as light neutral glass.
 - Keep dummy panels beside windows as narrow rectangles that inherit nearby full-panel colors.
-- Add configurable top and bottom trim rectangles.
+- Add configurable top and bottom trim rectangles, including independent trim heights.
 - Export PNG, SVG, and CSV panel schedules.
 
 ## Installation
@@ -142,5 +142,5 @@ PALETTE = {
 - Sampling uses average color per triangle, so small details in the reference image are simplified.
 - The sail motif is a deterministic bias layer, not a structural optimization algorithm.
 - Dummy panels inherit a nearby full-panel color and are not independently image-sampled.
-- The layout is fixed to 3 panel rows plus top and bottom trim.
+- The layout is fixed to 3 panel rows plus top and bottom trim; row and trim heights can be adjusted while façade width remains controlled by the column count and preview width.
 - The app does not integrate with Rhino, Grasshopper, BIM, or CAD systems.
