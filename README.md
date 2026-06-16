@@ -142,5 +142,5 @@ PALETTE = {
 - Sampling uses average color per triangle, so small details in the reference image are simplified.
 - The sail motif is a deterministic bias layer, not a structural optimization algorithm.
 - Dummy panels inherit a nearby full-panel color and are not independently image-sampled.
-- The layout is fixed to 3 panel rows plus top and bottom trim; row and trim heights can be adjusted while façade width remains controlled by the column count and preview width.
+- The layout is fixed to 3 panel rows plus top and bottom trim; row and trim heights can be adjusted, and odd/even column panel widths can be controlled independently to set the façade width.
 - The app does not integrate with Rhino, Grasshopper, BIM, or CAD systems.
