@@ -6,7 +6,7 @@ This is **not** an AI image-generation tool. It is a rule-based pattern engine f
 
 ## What the app does
 
-- Upload a reference image and map it onto a 3-row façade grid.
+- Upload a reference image and map it onto a 3-row or 6-row façade grid.
 - Configure the number of vertical bays/columns.
 - Place rectangular window openings in the middle row by column number.
 - Test both allowed diagonal splits for every full panel:
@@ -115,24 +115,39 @@ The generator intentionally enforces strict architectural pattern rules:
 - Dummy panels beside windows are narrow rectangles and inherit adjacent full-panel color.
 - Top and bottom trims are horizontal rectangles and are not triangulated.
 
+### Panel row mode
+
+Use **Panel row mode** to choose the default 3-row layout or the optional 6-row layout. In 6-row mode, windows span the two center rows and the narrow side dummy panels are split into upper and lower rectangles. Full solar-glass panels are still exactly one rectangle split into two triangles.
+
+### Settings JSON
+
+Use **Download settings JSON** to save the controls needed to reproduce a pattern. Use **Load settings JSON** to restore those controls, then upload the same reference image manually because image files are intentionally not embedded in the JSON. Unknown JSON fields are ignored and missing fields fall back to defaults.
+
 ## Palette
 
-The default editable palette is defined in `palette.py`:
+The default manufacturer palette is defined in `palette.py`:
 
 ```python
-PALETTE = {
-    "ice_blue": "#D9EAF2",
-    "light_blue": "#AFC9DD",
-    "medium_blue": "#5F8DB4",
-    "ral_5010": "#004F9E",
-    "dark_navy": "#102D46",
-    "charcoal": "#1C252A",
-    "coral_red": "#C94B43",
-    "soft_pink": "#E7A6A2",
-    "muted_green": "#6D8A78",
-    "muted_yellow": "#E5C45A",
-    "window_glass": "#EAF5F8",
-    "door_ral_5015": "#007BC7",
+MANUFACTURER_PALETTE = {
+    "BLACK CLEAR": "#000000",
+    "ANTHRACITE": "#202A2F",
+    "BLACK ACID": "#2B2D2D",
+    "GREY": "#30333B",
+    "POLAR GREY": "#9DB2BD",
+    "POLAR WHITE": "#BFD8E8",
+    "LIME WHITE": "#C6DAD2",
+    "WHITE": "#EEF2FA",
+    "BLUE": "#3156D4",
+    "DEEP BLUE": "#233A78",
+    "GREEN": "#438A62",
+    "INTENSE GREEN": "#438A65",
+    "CORAL BROWN": "#927459",
+    "CLAY": "#9A4F37",
+    "CORTEN STEEL": "#633731",
+    "OCHER": "#8B572D",
+    "SAND": "#B07C4D",
+    "TERRACOTTA": "#874836",
+    "MARBLE BROWN": "#4D4A40",
 }
 ```
 
@@ -142,5 +157,5 @@ PALETTE = {
 - Sampling uses average color per triangle, so small details in the reference image are simplified.
 - The sail motif is a deterministic bias layer, not a structural optimization algorithm.
 - Dummy panels inherit a nearby full-panel color and are not independently image-sampled.
-- The layout is fixed to 3 panel rows plus top and bottom trim; row and trim heights can be adjusted, and odd/even column panel widths can be controlled independently to set the façade width.
+- The layout supports 3 or 6 panel rows plus top and bottom trim; row and trim heights can be adjusted, and odd/even column panel widths can be controlled independently to set the façade width.
 - The app does not integrate with Rhino, Grasshopper, BIM, or CAD systems.
