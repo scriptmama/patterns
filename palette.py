@@ -22,6 +22,16 @@ MANUFACTURER_PALETTE = {
     "MARBLE BROWN": "#4D4A40",
 }
 
+PALETTE_GROUPS = {
+    "light_field": ["POLAR WHITE", "WHITE", "LIME WHITE", "POLAR GREY", "SAND"],
+    "blue_field": ["BLUE", "DEEP BLUE", "POLAR GREY", "POLAR WHITE"],
+    "dark_accents": ["BLACK CLEAR", "ANTHRACITE", "BLACK ACID", "GREY", "MARBLE BROWN", "DEEP BLUE"],
+    "green_accents": ["GREEN", "INTENSE GREEN", "LIME WHITE"],
+    "warm_accents": ["CORAL BROWN", "CLAY", "CORTEN STEEL", "OCHER", "SAND", "TERRACOTTA", "MARBLE BROWN"],
+}
+
+DEFAULT_PALETTE_GROUPS = ["light_field", "blue_field", "dark_accents", "green_accents", "warm_accents"]
+
 # Backwards-compatible default palette name used throughout the app.
 PALETTE = MANUFACTURER_PALETTE
 
