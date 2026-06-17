@@ -8,9 +8,9 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 from facade_layout import Panel, Rect, triangle_points
-from palette import PALETTE, WINDOW_COLOR
+from palette import DEFAULT_BOTTOM_TRIM, DEFAULT_TOP_TRIM, PALETTE, SPECIAL_COLORS, WINDOW_COLOR
 
-DARK_NAMES = ("ral_5010", "dark_navy", "charcoal")
+DARK_NAMES = ("DEEP BLUE", "BLACK CLEAR", "ANTHRACITE", "BLACK ACID", "GREY")
 
 
 def hex_to_rgb(hex_color: str) -> np.ndarray:
@@ -23,14 +23,19 @@ def rgb_to_hex(rgb: Iterable[int]) -> str:
     return f"#{r:02X}{g:02X}{b:02X}"
 
 
-def usable_palette(accent_limit: int, palette: Dict[str, str] | None = None) -> Dict[str, str]:
-    """Return a palette constrained by accent color limit while preserving core blues/neutrals."""
+def usable_palette(accent_limit: int, palette: Dict[str, str] | None = None,
+                   enabled_colors: Iterable[str] | None = None) -> Dict[str, str]:
+    """Return the enabled manufacturer palette constrained by accent color limit."""
     palette = palette or PALETTE
-    base = ["ice_blue", "light_blue", "medium_blue", "ral_5010", "dark_navy", "charcoal", "window_glass"]
-    accents = ["coral_red", "soft_pink", "muted_green", "muted_yellow", "door_ral_5015"][: max(0, accent_limit)]
-    names = [n for n in base + accents if n in palette]
-    return {n: palette[n] for n in names}
-
+    if enabled_colors is not None:
+        names = [name for name in enabled_colors if name in palette]
+    else:
+        names = list(palette)
+    # Keep a stable neutral/core set, then allow a bounded number of warmer accents.
+    core = [n for n in names if n not in {"CORAL BROWN", "CLAY", "CORTEN STEEL", "OCHER", "SAND", "TERRACOTTA"}]
+    accents = [n for n in names if n not in core][: max(0, accent_limit)]
+    selected = core + accents
+    return {n: palette[n] for n in selected} or dict(palette)
 
 def nearest_palette_color(rgb: np.ndarray, palette: Dict[str, str]) -> tuple[str, str, float]:
     best_name, best_hex, best_dist = "", "#000000", float("inf")
@@ -70,8 +75,8 @@ def _apply_gradient(rgb: np.ndarray, rect: Rect, total_height: float, strength: 
     if strength <= 0:
         return rgb
     y_norm = (rect.y + rect.height / 2) / total_height
-    dark = hex_to_rgb(PALETTE["ral_5010"])
-    light = hex_to_rgb(PALETTE["ice_blue"])
+    dark = hex_to_rgb(PALETTE["DEEP BLUE"])
+    light = hex_to_rgb(PALETTE["POLAR WHITE"])
     target = dark * y_norm + light * (1 - y_norm)
     return rgb * (1 - strength) + target * strength
 
@@ -135,14 +140,17 @@ def _apply_sail_motif(full_panels: list[Panel], columns: int, seed: int, palette
 def generate_pattern(layout: list[Panel], reference: Image.Image, columns: int, accent_limit: int = 3,
                      symmetry_mode: str = "none", repeat_n: int = 4, seed: int = 0,
                      diagonal_randomness: float = 0.0, gradient_strength: float = 0.0,
-                     sail_motif: bool = False, top_trim: str = "ice_blue",
-                     bottom_trim: str = "ral_5010") -> list[Panel]:
+                     sail_motif: bool = False, top_trim: str = DEFAULT_TOP_TRIM,
+                     bottom_trim: str = DEFAULT_BOTTOM_TRIM, palette: Dict[str, str] | None = None,
+                     enabled_palette_colors: Iterable[str] | None = None,
+                     window_glass_color: str | None = None) -> list[Panel]:
     """Assign split directions and palette colors to all layout panels."""
     rng = np.random.default_rng(seed)
     facade_w = int(max(p.rect.x2 for p in layout))
     facade_h = int(max(p.rect.y2 for p in layout))
     image = reference.convert("RGB").resize((facade_w, facade_h), Image.Resampling.LANCZOS)
-    pal = usable_palette(accent_limit)
+    palette = palette or PALETTE
+    pal = usable_palette(accent_limit, palette, enabled_palette_colors)
 
     full = [_pick_full_panel(image, p, pal, rng, diagonal_randomness, gradient_strength) for p in layout if p.panel_type == "full"]
     full = _apply_symmetry(full, columns, symmetry_mode, repeat_n)
@@ -155,17 +163,18 @@ def generate_pattern(layout: list[Panel], reference: Image.Image, columns: int, 
         if p.panel_type == "full":
             result.append(full_by_key[(p.row, p.col)])
         elif p.panel_type == "window":
-            hx = PALETTE[WINDOW_COLOR]
+            hx = window_glass_color or SPECIAL_COLORS[WINDOW_COLOR]
             result.append(replace(p, triangle_a_color_name=WINDOW_COLOR, triangle_a_hex=hx,
                                   triangle_b_color_name=WINDOW_COLOR, triangle_b_hex=hx))
         elif p.panel_type == "dummy":
             neighbor_col = p.col - 1 if p.side == "L" else p.col + 1
             inherited = full_by_key.get((p.row, neighbor_col)) or full_by_key.get((p.row - 1, p.col)) or full_by_key.get((p.row + 1, p.col))
-            name = inherited.triangle_a_color_name if inherited else "ral_5010"
-            hx = inherited.triangle_a_hex if inherited else PALETTE["ral_5010"]
+            name = inherited.triangle_a_color_name if inherited else "DEEP BLUE"
+            hx = inherited.triangle_a_hex if inherited else palette["DEEP BLUE"]
             result.append(replace(p, triangle_a_color_name=name, triangle_a_hex=hx, triangle_b_color_name=name, triangle_b_hex=hx))
-        elif p.panel_type == "trim":
+        elif p.panel_type in {"top_trim", "bottom_trim", "trim"}:
             name = top_trim if p.panel_id == "T_TOP" else bottom_trim
-            hx = PALETTE.get(name, name if str(name).startswith("#") else PALETTE["ice_blue"])
+            color_lookup = {**palette, **SPECIAL_COLORS}
+            hx = color_lookup.get(name, name if str(name).startswith("#") else SPECIAL_COLORS[DEFAULT_TOP_TRIM])
             result.append(replace(p, triangle_a_color_name=name, triangle_a_hex=hx, triangle_b_color_name=name, triangle_b_hex=hx))
     return result

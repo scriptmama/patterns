@@ -12,12 +12,11 @@ from facade_layout import Panel, triangle_points
 STROKE = "#F7FBFC"
 
 
-def schedule_dataframe(panels: list[Panel]) -> pd.DataFrame:
+def schedule_dataframe(panels: list[Panel], row_mode: str = "3") -> pd.DataFrame:
     rows = []
     for p in panels:
-        if p.panel_type == "trim":
-            continue
         rows.append({
+            "row_mode": str(row_mode),
             "panel_id": p.panel_id,
             "row": p.row,
             "col": p.col + 1,
@@ -31,8 +30,8 @@ def schedule_dataframe(panels: list[Panel]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def export_csv(panels: list[Panel]) -> bytes:
-    return schedule_dataframe(panels).to_csv(index=False).encode("utf-8")
+def export_csv(panels: list[Panel], row_mode: str = "3") -> bytes:
+    return schedule_dataframe(panels, row_mode=row_mode).to_csv(index=False).encode("utf-8")
 
 
 def draw_png(panels: list[Panel], size: tuple[int, int]) -> Image.Image:

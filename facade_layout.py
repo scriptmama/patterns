@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, List, Literal
 
-PanelType = Literal["full", "window", "dummy", "trim"]
+PanelType = Literal["full", "window", "dummy", "top_trim", "bottom_trim", "trim"]
 SplitDirection = Literal["TL_BR", "BL_TR", "NONE"]
 
 
@@ -64,15 +64,15 @@ def build_layout(
     top_trim_height: int = 34,
     bottom_trim_height: int = 34,
     dummy_fraction: float = 0.16,
+    row_mode: str = "3",
     trim_height: int | None = None,
     odd_panel_width: int | None = None,
     even_panel_width: int | None = None,
 ) -> list[Panel]:
-    """Build a 3-row facade with optional windows and dummy side panels in the middle row.
+    """Build a 3- or 6-row facade with optional windows and dummy side panels.
 
-    Rows 0, 1, 2 are panel rows. Row 1 may contain a central rectangular window
-    plus two narrow dummy rectangles inside the same bay. Trims are represented as
-    separate non-triangulated panels with row -1 and 3.
+    In 3-row mode, windows occupy row 1. In 6-row mode, windows span rows 2
+    and 3, while side dummy panels are split into upper/lower rectangles.
     """
     if trim_height is not None:
         top_trim_height = trim_height
@@ -95,21 +95,36 @@ def build_layout(
     window_set = set(window_columns)
     panels: list[Panel] = []
 
-    panels.append(Panel("T_TOP", -1, -1, "trim", Rect(0, 0, width, top_trim_height)))
-    for row in range(3):
+    row_count = 6 if str(row_mode) == "6" else 3
+    window_start = 2 if row_count == 6 else 1
+    window_span = 2 if row_count == 6 else 1
+
+    panels.append(Panel("T_TOP", -1, -1, "top_trim", Rect(0, 0, width, top_trim_height)))
+    for row in range(row_count):
         y = top_trim_height + row * panel_height
         x = 0.0
         for col, bay_w in enumerate(bay_widths):
-            if row == 1 and col in window_set:
+            if row_count == 3 and row == window_start and col in window_set:
                 dummy_w = bay_w * dummy_fraction
                 window_w = bay_w - 2 * dummy_w
                 panels.append(Panel(f"D_{col + 1:02d}_L", row, col, "dummy", Rect(x, y, dummy_w, panel_height), side="L"))
                 panels.append(Panel(f"W_{col + 1:02d}", row, col, "window", Rect(x + dummy_w, y, window_w, panel_height)))
                 panels.append(Panel(f"D_{col + 1:02d}_R", row, col, "dummy", Rect(x + dummy_w + window_w, y, dummy_w, panel_height), side="R"))
+            elif row_count == 6 and row == window_start and col in window_set:
+                dummy_w = bay_w * dummy_fraction
+                window_w = bay_w - 2 * dummy_w
+                panels.append(Panel(f"D_{col + 1:02d}_L_upper", row, col, "dummy", Rect(x, y, dummy_w, panel_height), side="L"))
+                panels.append(Panel(f"W_{col + 1:02d}", row, col, "window", Rect(x + dummy_w, y, window_w, panel_height * window_span)))
+                panels.append(Panel(f"D_{col + 1:02d}_R_upper", row, col, "dummy", Rect(x + dummy_w + window_w, y, dummy_w, panel_height), side="R"))
+            elif row_count == 6 and row == window_start + 1 and col in window_set:
+                dummy_w = bay_w * dummy_fraction
+                window_w = bay_w - 2 * dummy_w
+                panels.append(Panel(f"D_{col + 1:02d}_L_lower", row, col, "dummy", Rect(x, y, dummy_w, panel_height), side="L"))
+                panels.append(Panel(f"D_{col + 1:02d}_R_lower", row, col, "dummy", Rect(x + dummy_w + window_w, y, dummy_w, panel_height), side="R"))
             else:
                 panels.append(Panel(f"P_{row}_{col + 1:02d}", row, col, "full", Rect(x, y, bay_w, panel_height)))
             x += bay_w
-    panels.append(Panel("T_BOTTOM", 3, -1, "trim", Rect(0, top_trim_height + 3 * panel_height, width, bottom_trim_height)))
+    panels.append(Panel("T_BOTTOM", row_count, -1, "bottom_trim", Rect(0, top_trim_height + row_count * panel_height, width, bottom_trim_height)))
     return panels
 
 
@@ -122,6 +137,7 @@ def canvas_size(
     columns: int | None = None,
     odd_panel_width: int | None = None,
     even_panel_width: int | None = None,
+    row_mode: str = "3",
 ) -> tuple[int, int]:
     if trim_height is not None:
         top_trim_height = trim_height
@@ -136,7 +152,8 @@ def canvas_size(
         odd_columns = (columns + 1) // 2
         even_columns = columns // 2
         width = odd_columns * odd_panel_width + even_columns * even_panel_width
-    return width, top_trim_height + bottom_trim_height + panel_height * 3
+    row_count = 6 if str(row_mode) == "6" else 3
+    return width, top_trim_height + bottom_trim_height + panel_height * row_count
 
 
 def triangle_points(rect: Rect, split: SplitDirection) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
